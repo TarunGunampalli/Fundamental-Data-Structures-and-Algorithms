@@ -1,5 +1,3 @@
-import java.util.Vector;
-
 /**
  * Class Maze represents a bidimensional maze 
  * to traverse and find a path through
@@ -21,12 +19,12 @@ public class Maze {
      * with all positions initially open
      */
 	public Maze(int width, int height) {
-    	maze = new MazeStatus[width][height];
-    	for (int i = 0; i < width; i++) {
-    	    for (int j = 0; j < height; j++) {
-        	    maze[i][j] = MazeStatus.OPEN;
-    	    }
-    	}
+		maze = new MazeStatus[height][width];
+		for (int row=0; row<height; row++) {
+			for (int col=0; col<width; col++) {
+				maze[row][col] = MazeStatus.OPEN;
+			}
+		}
 	}
 
     /**
@@ -42,7 +40,14 @@ public class Maze {
      * specified by its row and column
      */
 	public MazeStatus getPosStatus(int row, int col) {
-		return maze[row][col]; // TO DO: change appropriately
+		return maze[row][col];
+	}
+	
+    /**
+     * Returns the MazeStatus value corresponding to the given position
+     */
+	public MazeStatus getPosStatus(MazePosition pos) {
+		return maze[pos.getCoords()[0]][pos.getCoords()[1]];
 	}
 	
     /**
@@ -54,23 +59,29 @@ public class Maze {
 	}
 	
     /**
+     * Sets the cell corresponding to the specified position to 
+     * the given status value
+     */
+	public void setPosStatus(MazePosition pos, MazeStatus newStatus) {
+		maze[pos.getCoords()[0]][pos.getCoords()[1]] = newStatus;
+	}
+	
+
+    /**
      * Creates and returns an String with 
      * the text-based representation of the given Maze
      */
 	public String toString() {
 		String s = null;
-
-		for (int i = 0; i < maze.length; i++) {
-		    for (int j = 0; j < maze[i].length; j++) {
-		        if (s == null) {
-		            s = String.valueOf(maze[i][j].text());
-		            continue;
-		        }
-		        s += maze[i][j].text();
-		    }
-		    s += "\n";
+		if (maze != null && maze[0] != null) {
+			s = "";
+			for (int r=0; r < maze.length; r++) {
+				for (int c=0; c < maze[0].length; c++) {
+					s=s.concat(String.valueOf(maze[r][c].text()));
+				}
+				s=s.concat(System.lineSeparator());
+			}
 		}
-
 		return s;
 	}
 
@@ -81,32 +92,58 @@ public class Maze {
      * the corresponding status value based on the given text representation.
      */
 	private MazeStatus[][] stringToMaze(String sMaze) {
-		String[] rows = sMaze.split("\n");
-		int height = rows.length;
-		int width = rows[0].length();
-		maze = new MazeStatus[height][width];
-		for (int j = 0; j < height; j++) {
-		    char[] chars = rows[j].toCharArray();
-		    for (int i = 0; i < width; i++) {
-		        if (chars[i] == MazeStatus.OPEN.text()) {
-		            maze[j][i] = MazeStatus.OPEN;
-		        }
-		        if (chars[i] == MazeStatus.GOAL.text()) {
-		            maze[j][i] = MazeStatus.GOAL;
-		        }
-		        if (chars[i] == MazeStatus.VISITED.text()) {
-		            maze[j][i] = MazeStatus.VISITED;
-		        }
-		        if (chars[i] == MazeStatus.OBSTACLE.text()) {
-		            maze[j][i] = MazeStatus.OBSTACLE;
-		        }
-		    }
-		        
+		MazeStatus[][] maze = null;
+		
+		if (sMaze != null) {
+			String sMazeRows[] = sMaze.split("\n");
+			char cMazeCols[];
+			
+			maze = new MazeStatus[sMazeRows.length][];
+			
+			for (int row =0; row<sMazeRows.length; row++) {
+				if (sMazeRows[row] == null) {
+					maze[row] = null;
+				} else {
+					maze[row] = new MazeStatus[sMazeRows[row].length()];
+					cMazeCols = sMazeRows[row].toCharArray();
+					
+					for (int col =0; col<cMazeCols.length; col++) {
+						if (cMazeCols[col] == MazeStatus.GOAL.text() ) {
+							maze[row][col] = MazeStatus.GOAL;
+						} else if (cMazeCols[col] == MazeStatus.OPEN.text() ) {
+							maze[row][col] = MazeStatus.OPEN;
+						} else if (cMazeCols[col] == MazeStatus.OBSTACLE.text() ) {
+							maze[row][col] = MazeStatus.OBSTACLE;
+						} else if (cMazeCols[col] == MazeStatus.VISITED.text() ) {
+							maze[row][col] = MazeStatus.VISITED;
+						}
+					}
+				}
+				
+			}
 		}
+	
 		return maze;
 	}
 	
+    /**
+     * Calculates the destination position in the Maze
+     * given an starting position (row, col) and  a Movement (mov)
+     * 
+     * @returns the coordinates of the next position, if its is a valid position. 
+     * Returns null if the destination position is outside the limits of the array.
+     */
+	public MazePosition getNeighbour(MazePosition pos, Movement mov) {
+	    MazePosition newPos = null;
+	    
+	    int[] newCoords = getNeighbourCoords(pos.getCoords()[0], pos.getCoords()[1], mov);
+	    if (newCoords != null) {
+	        newPos = new MazePosition(newCoords, pos);
+        }  
+	    return newPos;
+	}
 
+	
     /**
      * Calculates the destination position in the Maze
      * given an starting position (row, col) and  a Movement (mov)
@@ -115,10 +152,19 @@ public class Maze {
      * Returns null if the destination position is outside the limits of the array.
      */
 	public int[] getNeighbourCoords(int row, int col, Movement mov) {
-		int[] neighbourCoords = new int[2];
-        neighbourCoords[0] = row + mov.vShift();
-        neighbourCoords[1] = col + mov.hShift();
-		return neighbourCoords; // TO DO: change appropriately
+		int[] currentCoords = new int[] { row, col };
+
+		int[] newCoords = new int[] {
+				currentCoords[0] + mov.vShift(),
+				currentCoords[1] + mov.hShift()
+		};
+		if (newCoords[0] < 0 || newCoords[0] >= maze.length || 
+				newCoords[1] < 0 || newCoords[1] >= maze[0].length) 
+		{
+			// invalid position
+			newCoords = null; 
+		}
+		return newCoords;
 	}
 	
 
@@ -136,23 +182,28 @@ public class Maze {
      */
     public void followPath(Path path) {
         
-        int[] coords = path.extractFirst();
-        while (coords != null) {
-            switch (this.getPosStatus(coords[0], coords[1])) {
-                case OPEN:
-                case VISITED:
-                    setPosStatus(coords[0], coords[1], MazeStatus.VISITED);
-                    coords = path.extractFirst();
-                    break;
-                case OBSTACLE:
-                    return;
-                case GOAL:
-                    coords = path.extractFirst();
-                    break;
-            }
-        }
-		
+        if (path != null) {
+            
+            int[] coords = path.extractFirst();
 
+            while (coords != null) {
+                switch (this.getPosStatus(coords[0], coords[1])) {
+                    case OPEN:
+                    case VISITED:
+                        this.setPosStatus(coords[0], coords[1], MazeStatus.VISITED);
+                        coords  = path.extractFirst();
+                        break;
+                    case OBSTACLE:
+                        // invalid move: stop here
+                        return;
+                    case GOAL:
+                        // does not change status to keep showing GOAL
+                        coords  = path.extractFirst();
+                        break;
+                }
+            }
+        }   
+        
     }
 
 }
