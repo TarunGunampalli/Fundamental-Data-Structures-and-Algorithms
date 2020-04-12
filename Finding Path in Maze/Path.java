@@ -5,10 +5,10 @@
  * @author Raquel M. Crespo-Garcia <rcrespo@it.uc3m.es>
  */
 public class Path {
-
+    
     /** First position in the path */    
     private PathStep first;
-    
+
     /** Last position in the path */    
     private PathStep last;
     
@@ -20,28 +20,34 @@ public class Path {
         this.last = null;
     }
     
+    
     /**
      * Insert the given coordinates as a new step in the first position of the path
      */
     public void insertFirst(int row, int col) {
-        // TO DO (Part 3)
-        // Learning concepts:
-        // Insert first element in doubly linked list
+        PathStep n = new PathStep(row, col);
+        if (this.first == null) {  // empty list
+            this.first = n;
+            this.last = n;
+        } else {  // non-empty list
+            n.setNext(first);
+            first.setPrev(n);
+            first = n;
+        }
     }
     
     /**
      * Insert the given coordinates as a new step in the last position of the path
      */
     public void insertLast(int row, int col) {
-        PathStep pathStep = new PathStep(row, col);
-        if (this.last == null) {
-            this.first = pathStep;
-            this.last = pathStep;
-        }
-        else {
-            this.last.setNext(pathStep);
-            pathStep.setPrev(this.last);
-            this.last = pathStep;
+        PathStep n = new PathStep(row, col);
+        if (this.last == null) {  // empty list
+            this.first = n;
+            this.last = n;
+        } else {  // non-empty list
+            last.setNext(n);
+            n.setPrev(last);
+            last = n;
         }
     }
     
@@ -52,15 +58,15 @@ public class Path {
     public int[] extractFirst() {
         int[] coords = null;
         if (first != null) {
-            coords = new int[2];
-            coords[0] = first.getRow();
-            coords[1] = first.getCol();
-            if (first.getNext() != null) {
-                first.getNext().setPrev(null);
-            }
+            coords = new int[] { first.getRow(), first.getCol() };
             first = first.getNext();
+            if (first != null) {
+                first.setPrev(null);
+            } else {
+                last = null;
+            }
         }
-        return coords;    // TO DO: modify as appropriate
+        return coords;
     }
     
     /**
@@ -68,12 +74,17 @@ public class Path {
      * If the Path is empty, returns null.
      */
     public int[] extractLast() {
-
-        // TO DO (Part 3)
-        // Learning concepts:
-        // Extract last element of doubly linked list
-
-        return null;    // TO DO: modify as appropriate
+        int[] coords = null;
+        if (last != null) {
+            coords = new int[] { last.getRow(), last.getCol() };
+            last = last.getPrev();
+            if (last != null) {
+                last.setNext(null);
+            } else {
+                first = null;
+            }
+        }
+        return coords;
     }
     
     /**
@@ -85,9 +96,14 @@ public class Path {
     public String toString() {
         
         String sPath = "";
-        PathStep s = first;
+        PathStep s = null;
+
+        if (first != null) {
+            sPath = "(" + first.getRow() + ", " + first.getCol() + ")";
+            s = first.getNext();
+        }
         while (s != null) {
-            sPath += "(" + s.getRow() + ", " + s.getCol() + ")";
+            sPath = sPath + ", " + "(" + s.getRow() + ", " + s.getCol() + ")";
             s = s.getNext();
         }
         
